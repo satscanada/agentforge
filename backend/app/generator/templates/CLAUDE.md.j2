@@ -1,0 +1,21 @@
+# {{ config.project_name }} — Project Context
+
+## Project Identity
+
+- Name: `{{ config.project_name }}`
+- Description: {{ config.description }}
+- Root Agent: `{{ root_agent.name }}`
+
+## Architectural Rules
+
+1. LiteLLM is the only model gateway.
+2. Deterministic tools are direct Python calls.
+3. Audit logging belongs in callbacks only.
+4. `/health`, `/run`, and `/stream` must remain available.
+5. Session service is config-driven.
+
+## Agent Topology
+
+{% for agent in flatten_agents(root_agent) %}
+- `{{ agent.name }}`: `{{ agent.agent_type.value }}`
+{% endfor %}

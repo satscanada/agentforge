@@ -1,0 +1,26 @@
+# {{ config.project_name }}
+
+{{ config.description }}
+
+## Generated Files
+
+- `agent.py`
+- `tools.py`
+- `callbacks.py`
+- `main.py`
+- `api_server.py`
+- `requirements.txt`
+- `.env.example`
+- `CLAUDE.md`
+- `README.md`
+- `LOAD_CONTEXT.md`
+- `TODO.md`
+
+## Quick Start
+
+```bash
+pip install -r requirements.txt
+cp .env.example .env
+python main.py
+python -m uvicorn api_server:app --reload --port 8000
+```

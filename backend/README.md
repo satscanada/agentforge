@@ -8,3 +8,17 @@ This directory is intentionally a checkpoint-1 stub. Future checkpoints add:
 - Pydantic request/response models
 - Jinja2 generator engine and templates
 - ZIP generation and download endpoints
+
+## Local Python
+
+Use the repo-level `pyenv` environment before running the backend:
+
+```bash
+cd ..
+pyenv local 3.12.12
+cd backend
+pyenv version
+python --version
+pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --port 8000
+```

@@ -1,0 +1,16 @@
+"""CLI entrypoint for {{ config.project_name }}."""
+
+from __future__ import annotations
+
+from agent import build_agent_topology, run_deterministic_validations
+
+
+def main() -> None:
+    """Run a simple local preview of the generated scaffold."""
+    topology = build_agent_topology()
+    deterministic_calls = run_deterministic_validations()
+    print({"topology": topology, "deterministic_calls": deterministic_calls})
+
+
+if __name__ == "__main__":
+    main()

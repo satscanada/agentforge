@@ -1,0 +1,25 @@
+# Environment files
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Frontend build and dependencies
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+
+# Editor and OS files
+.DS_Store
+.idea/
+.vscode/

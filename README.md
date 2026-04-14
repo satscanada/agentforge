@@ -28,6 +28,7 @@ Every scaffolded project includes:
 
 ## Prerequisites
 
+- `pyenv`
 - Python 3.11+
 - Node.js 18+
 - npm 9+
@@ -37,13 +38,25 @@ Every scaffolded project includes:
 ### Backend
 
 ```bash
+pyenv local 3.12.12
+
 cd backend
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pyenv version
+python --version
 pip install -r requirements.txt
 cp .env.example .env
-uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --port 8000
 ```
+
+Optional: if you want an isolated `pyenv-virtualenv` for this repo, create one first:
+
+```bash
+pyenv virtualenv 3.12.12 agentforge-3.12.12
+pyenv local agentforge-3.12.12
+```
+
+If `python3` still resolves to a system interpreter in your shell, use `python` after
+`pyenv local ...` or run commands through `pyenv exec`.
 
 ### Frontend
 

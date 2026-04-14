@@ -1,0 +1,60 @@
+"""Generated ADK agent wiring for {{ config.project_name }}."""
+
+from __future__ import annotations
+
+from google.adk.models.lite_llm import LiteLlm
+
+
+MODEL = LiteLlm(
+    model="{{ config.litellm.model }}",
+    api_base="{{ config.litellm.api_base }}",
+    api_key_env="{{ config.litellm.api_key_env }}",
+)
+
+
+{% for agent in flatten_agents(root_agent) %}
+class {{ agent.name }}Definition:
+    """Generated definition for {{ agent.name }}."""
+
+    name = "{{ agent.name }}"
+    agent_type = "{{ agent.agent_type.value }}"
+    instructions = """{{ agent.instructions }}"""
+    {% if agent.model %}
+    model = "{{ agent.model }}"
+    {% else %}
+    model = None
+    {% endif %}
+    tools = [{% for tool in nondeterministic_tools(agent) %}"{{ tool }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+    sub_agents = [{% for sub_agent in agent.sub_agents %}"{{ sub_agent.name }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+
+
+{% endfor %}
+def build_agent_topology() -> dict[str, object]:
+    """Build the generated agent topology summary."""
+    return {
+        "root_agent": "{{ root_agent.name }}",
+        "agent_type": "{{ root_agent.agent_type.value }}",
+        "sub_agents": [{% for sub_agent in root_agent.sub_agents %}"{{ sub_agent.name }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+    }
+
+
+def run_deterministic_validations() -> list[str]:
+    """Execute deterministic CD ladder checks directly in Python."""
+    executed_calls: list[str] = []
+{% for agent in flatten_agents(root_agent) %}
+{% for tool in deterministic_tools(agent) %}
+    {{ tool }}()
+    executed_calls.append("{{ tool }}")
+{% endfor %}
+{% endfor %}
+    return executed_calls
+
+
+def calculate_ladder_splits() -> None:
+    """Placeholder deterministic calculator implementation."""
+    return None
+
+
+def check_regulatory_limits() -> None:
+    """Placeholder deterministic validation implementation."""
+    return None

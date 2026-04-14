@@ -1,0 +1,21 @@
+# Load Context
+
+## Project
+
+- Name: `{{ config.project_name }}`
+- Description: {{ config.description }}
+
+## Topology
+
+- Root: `{{ root_agent.name }}` (`{{ root_agent.agent_type.value }}`)
+{% for agent in root_agent.sub_agents %}
+- Child: `{{ agent.name }}` (`{{ agent.agent_type.value }}`)
+{% endfor %}
+
+## Deterministic Tools
+
+{% for agent in flatten_agents(root_agent) %}
+{% for tool in agent.tools if tool.is_deterministic %}
+- `{{ tool.name }}` from `{{ agent.name }}`
+{% endfor %}
+{% endfor %}

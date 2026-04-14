@@ -1,0 +1,20 @@
+"""Generated callback hooks for {{ config.project_name }}."""
+
+from __future__ import annotations
+
+from typing import Any
+
+
+def audit_before_tool_call(tool_name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Audit a tool call before execution."""
+    return {"event": "before_tool_call", "tool_name": tool_name, "payload": payload}
+
+
+def audit_after_tool_call(tool_name: str, result: Any) -> dict[str, Any]:
+    """Audit a tool call after execution."""
+    return {"event": "after_tool_call", "tool_name": tool_name, "result": result}
+
+
+def guardrail_before_agent(agent_name: str, state: dict[str, Any]) -> dict[str, Any]:
+    """Apply guardrail checks before an agent runs."""
+    return {"event": "before_agent_call", "agent_name": agent_name, "state": state}

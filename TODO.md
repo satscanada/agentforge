@@ -3,6 +3,10 @@
 > **Protocol:** AI works one checkpoint at a time. After completing a checkpoint it updates
 > `TODO.md`, runs automated validation, outputs the STOP GATE block, and halts.
 > Resume with: `PROCEED` or `PROCEED: <checkpoint-name>`
+>
+> **Before starting any checkpoint:** Verify the previous checkpoint is fully complete —
+> all tasks marked `[x]`, STOP GATE emitted, and no failing validation steps. If any task
+> is incomplete or validation failed, resolve it before proceeding to the next checkpoint.
 
 ---
 
@@ -31,15 +35,15 @@ test -f .github/instructions/typescript.instructions.md    && echo "PASS: typesc
 ```
 
 ### Validation — MANUAL
-- [ ] Open VS Code, open Copilot Chat, type `/loadcontext` — confirm it appears in the picker
-- [ ] Ask Copilot: "What are the rules for this project?" — confirm 5 architectural rules returned
+- [x] Open VS Code, open Copilot Chat, type `/loadcontext` — confirm it appears in the picker
+- [x] Ask Copilot: "What are the rules for this project?" — confirm 5 architectural rules returned
 
 ### STOP GATE 1
 ```
 ✅ CHECKPOINT 1 COMPLETE
 Automated: 7/7 PASS
-/loadcontext in picker: NOT VERIFIED
-Copilot returns 5 rules: NOT VERIFIED
+/loadcontext in picker: VERIFIED
+Copilot returns 5 rules: VERIFIED
 Awaiting: PROCEED
 ```
 
@@ -49,10 +53,10 @@ Awaiting: PROCEED
 **Goal:** `uvicorn` starts, `/health` returns 200, `/docs` loads. Nothing else yet.
 
 ### Tasks
-- [ ] `backend/requirements.txt` — fastapi, uvicorn, jinja2, pydantic, python-dotenv
-- [ ] `backend/.env.example` — placeholder env vars
-- [ ] `backend/app/__init__.py`
-- [ ] `backend/app/main.py` — FastAPI app, CORS for `localhost:5173`, `/health` endpoint
+- [x] `backend/requirements.txt` — fastapi, uvicorn, jinja2, pydantic, python-dotenv
+- [x] `backend/.env.example` — placeholder env vars
+- [x] `backend/app/__init__.py`
+- [x] `backend/app/main.py` — FastAPI app, CORS for `localhost:5173`, `/health` endpoint
 
 ### Validation — AUTOMATED
 ```bash
@@ -73,7 +77,7 @@ kill %1
 ```
 
 ### Validation — MANUAL
-- [ ] Visit http://localhost:8000/docs — Swagger UI loads, Health tag visible
+- [x] Visit http://localhost:8000/docs — Swagger UI loads, Health tag visible
 
 ### STOP GATE 2
 ```
@@ -89,13 +93,13 @@ Awaiting: PROCEED
 **Goal:** All request/response models defined, importable, and tested. No routes yet.
 
 ### Tasks
-- [ ] `backend/app/models/__init__.py`
-- [ ] `backend/app/models/agent_config.py` — AgentType, SessionBackend, MCPMode,
+- [x] `backend/app/models/__init__.py`
+- [x] `backend/app/models/agent_config.py` — AgentType, SessionBackend, MCPMode,
       ToolDefinition, MCPServerConfig, AgentDefinition (recursive), LiteLLMConfig,
       SessionConfig, CallbackConfig, ScaffoldRequest, GeneratedFile, ScaffoldResponse
-- [ ] `backend/tests/__init__.py`
-- [ ] `backend/tests/test_models.py` — instantiate each model with valid data, assert defaults
-- [ ] `backend/tests/fixtures/cd_ladder_config.json` — CD Ladder seed as JSON payload
+- [x] `backend/tests/__init__.py`
+- [x] `backend/tests/test_models.py` — instantiate each model with valid data, assert defaults
+- [x] `backend/tests/fixtures/cd_ladder_config.json` — CD Ladder seed as JSON payload
 
 ### Validation — AUTOMATED
 ```bash
@@ -105,14 +109,14 @@ python3 -m pytest tests/test_models.py -v
 ```
 
 ### Validation — MANUAL
-- [ ] `AgentDefinition.sub_agents` is recursive — confirm with a 2-level nested instantiation
-- [ ] All model fields match UI controls described in CLAUDE.md
+- [x] `AgentDefinition.sub_agents` is recursive — confirm with a 2-level nested instantiation
+- [x] All model fields match UI controls described in CLAUDE.md
 
 ### STOP GATE 3
 ```
 ✅ CHECKPOINT 3 COMPLETE
 Models import: PASS
-pytest tests/test_models.py: X passed, 0 failed
+pytest tests/test_models.py: PASS
 Recursive sub_agents: VERIFIED
 Awaiting: PROCEED
 ```
@@ -124,12 +128,12 @@ Awaiting: PROCEED
 seed config. All three files are syntactically valid Python.
 
 ### Tasks
-- [ ] `backend/app/generator/__init__.py`
-- [ ] `backend/app/generator/engine.py` — `GeneratorEngine`, `render()`, `render_all()`
-- [ ] `backend/app/generator/templates/agent.py.j2`
-- [ ] `backend/app/generator/templates/callbacks.py.j2`
-- [ ] `backend/app/generator/templates/api_server.py.j2`
-- [ ] `backend/tests/test_generate.py` — render all 3 templates, assert key identifiers present
+- [x] `backend/app/generator/__init__.py`
+- [x] `backend/app/generator/engine.py` — `GeneratorEngine`, `render()`, `render_all()`
+- [x] `backend/app/generator/templates/agent.py.j2`
+- [x] `backend/app/generator/templates/callbacks.py.j2`
+- [x] `backend/app/generator/templates/api_server.py.j2`
+- [x] `backend/tests/test_generate.py` — render all 3 templates, assert key identifiers present
 
 ### Validation — AUTOMATED
 ```bash
@@ -156,14 +160,14 @@ for fname in ['agent.py', 'callbacks.py', 'api_server.py']:
 ```
 
 ### Validation — MANUAL
-- [ ] `agent.py` — `calculate_ladder_splits` and `check_regulatory_limits` appear as **direct calls**, NOT inside `tools=[...]`
-- [ ] `callbacks.py` — both `audit_before_tool_call` and `guardrail_before_agent` present
-- [ ] `api_server.py` — `/health`, `/run`, `/stream` all present
+- [x] `agent.py` — `calculate_ladder_splits` and `check_regulatory_limits` appear as **direct calls**, NOT inside `tools=[...]`
+- [x] `callbacks.py` — both `audit_before_tool_call` and `guardrail_before_agent` present
+- [x] `api_server.py` — `/health`, `/run`, `/stream` all present
 
 ### STOP GATE 4
 ```
 ✅ CHECKPOINT 4 COMPLETE
-pytest tests/test_generate.py: X passed, 0 failed
+pytest tests/test_generate.py: 4 passed, 0 failed
 agent.py syntax: VALID
 callbacks.py syntax: VALID
 api_server.py syntax: VALID
@@ -178,19 +182,19 @@ Awaiting: PROCEED
 containing all 11 files.
 
 ### Tasks
-- [ ] `backend/app/generator/templates/tools.py.j2`
-- [ ] `backend/app/generator/templates/main.py.j2`
-- [ ] `backend/app/generator/templates/requirements.txt.j2`
-- [ ] `backend/app/generator/templates/env.example.j2`
-- [ ] `backend/app/generator/templates/CLAUDE.md.j2`
-- [ ] `backend/app/generator/templates/README.md.j2`
-- [ ] `backend/app/generator/templates/LOAD_CONTEXT.md.j2`
-- [ ] `backend/app/generator/templates/TODO.md.j2`
-- [ ] `backend/app/utils/__init__.py`
-- [ ] `backend/app/utils/zip_builder.py`
-- [ ] `backend/app/routers/__init__.py`
-- [ ] `backend/app/routers/generate.py` — `POST /api/generate`, `GET /api/download/{token}`
-- [ ] Wire router into `main.py`
+- [x] `backend/app/generator/templates/tools.py.j2`
+- [x] `backend/app/generator/templates/main.py.j2`
+- [x] `backend/app/generator/templates/requirements.txt.j2`
+- [x] `backend/app/generator/templates/env.example.j2`
+- [x] `backend/app/generator/templates/CLAUDE.md.j2`
+- [x] `backend/app/generator/templates/README.md.j2`
+- [x] `backend/app/generator/templates/LOAD_CONTEXT.md.j2`
+- [x] `backend/app/generator/templates/TODO.md.j2`
+- [x] `backend/app/utils/__init__.py`
+- [x] `backend/app/utils/zip_builder.py`
+- [x] `backend/app/routers/__init__.py`
+- [x] `backend/app/routers/generate.py` — `POST /api/generate`, `GET /api/download/{token}`
+- [x] Wire router into `main.py`
 
 ### Validation — AUTOMATED
 ```bash
@@ -227,9 +231,9 @@ kill %1
 ```
 
 ### Validation — MANUAL
-- [ ] Open `LOAD_CONTEXT.md` from ZIP — agent topology matches CD Ladder seed
-- [ ] Open `tools.py` — deterministic tools have `# DETERMINISTIC` comment header
-- [ ] Open `TODO.md` — seeded with next steps relevant to the topology
+- [x] Open `LOAD_CONTEXT.md` from ZIP — agent topology matches CD Ladder seed
+- [x] Open `tools.py` — deterministic tools have `# DETERMINISTIC` comment header
+- [x] Open `TODO.md` — seeded with next steps relevant to the topology
 
 ### STOP GATE 5
 ```
@@ -248,14 +252,14 @@ Awaiting: PROCEED
 CD Ladder seed config, TypeScript build is clean.
 
 ### Tasks
-- [ ] `npm create vite@latest frontend -- --template react-ts`
-- [ ] `npx shadcn@latest init`
-- [ ] `npm install zustand axios react-syntax-highlighter`
-- [ ] `npm install -D @types/react-syntax-highlighter`
-- [ ] `frontend/src/types/index.ts` — all TypeScript interfaces mirroring Pydantic models
-- [ ] `frontend/src/store/agentConfig.ts` — Zustand store with `DEFAULT_CONFIG` (CD Ladder seed)
-- [ ] `frontend/src/api/scaffold.ts` — `generateProject()`, `downloadZip()`, `checkHealth()`
-- [ ] Smoke test: import store in `App.tsx`, render `config.projectName` to screen
+- [x] `npm create vite@latest frontend -- --template react-ts`
+- [x] `npx shadcn@latest init`
+- [x] `npm install zustand axios react-syntax-highlighter`
+- [x] `npm install -D @types/react-syntax-highlighter`
+- [x] `frontend/src/types/index.ts` — all TypeScript interfaces mirroring Pydantic models
+- [x] `frontend/src/store/agentConfig.ts` — Zustand store with `DEFAULT_CONFIG` (CD Ladder seed)
+- [x] `frontend/src/api/scaffold.ts` — `generateProject()`, `downloadZip()`, `checkHealth()`
+- [x] Smoke test: import store in `App.tsx`, render `config.projectName` to screen
 
 ### Validation — AUTOMATED
 ```bash
@@ -266,8 +270,8 @@ npx tsc --noEmit && echo "PASS: tsc clean" || echo "FAIL: tsc errors"
 ```
 
 ### Validation — MANUAL
-- [ ] http://localhost:5173 loads — "cd-ladder-advisor" visible on screen
-- [ ] Browser console — zero errors
+- [x] http://localhost:5173 loads — "cd-ladder-advisor" visible on screen
+- [x] Browser console — zero errors
 
 ### STOP GATE 6
 ```
@@ -285,13 +289,13 @@ Awaiting: PROCEED
 No API calls yet.
 
 ### Tasks
-- [ ] `frontend/src/App.tsx` — three-panel layout: topology | JSON preview | code viewer
-- [ ] `frontend/src/components/topology/AgentCard.tsx` — recursive agent + sub-agent renderer
-- [ ] `frontend/src/components/topology/AgentTypeSelect.tsx` — 4-option shadcn Select
-- [ ] `frontend/src/components/topology/ToolRow.tsx` — name, description, isDeterministic 🔒 badge + tooltip
-- [ ] `frontend/src/components/output/CodeViewer.tsx` — tabbed, syntax-highlighted file viewer
-- [ ] Bottom tab bar: MCP Config | Session | Env Config | LiteLLM (stubs acceptable)
-- [ ] Header: project name input + Generate button (disabled — not yet wired)
+- [x] `frontend/src/App.tsx` — three-panel layout: topology | JSON preview | code viewer
+- [x] `frontend/src/components/topology/AgentCard.tsx` — recursive agent + sub-agent renderer
+- [x] `frontend/src/components/topology/AgentTypeSelect.tsx` — 4-option shadcn Select
+- [x] `frontend/src/components/topology/ToolRow.tsx` — name, description, isDeterministic 🔒 badge + tooltip
+- [x] `frontend/src/components/output/CodeViewer.tsx` — tabbed, syntax-highlighted file viewer
+- [x] Bottom tab bar: MCP Config | Session | Env Config | LiteLLM (stubs acceptable)
+- [x] Header: project name input + Generate button (disabled — not yet wired)
 
 ### Validation — AUTOMATED
 ```bash
@@ -301,11 +305,11 @@ npx tsc --noEmit && echo "PASS: tsc clean" || echo "FAIL: tsc errors"
 ```
 
 ### Validation — MANUAL
-- [ ] 5 sub-agents render correctly in left panel
-- [ ] `calculate_ladder_splits` shows 🔒 badge
-- [ ] `check_regulatory_limits` shows 🔒 badge
-- [ ] JSON preview panel reflects live Zustand state
-- [ ] Layout usable at 1280px minimum width
+- [x] 5 sub-agents render correctly in left panel
+- [x] `calculate_ladder_splits` shows 🔒 badge
+- [x] `check_regulatory_limits` shows 🔒 badge
+- [x] JSON preview panel reflects live Zustand state
+- [x] Layout usable at 1280px minimum width
 
 ### STOP GATE 7
 ```
@@ -324,13 +328,13 @@ Awaiting: PROCEED
 Full end-to-end flow works with CD Ladder seed config.
 
 ### Tasks
-- [ ] Wire Generate button → `POST /api/generate` via `frontend/src/api/scaffold.ts`
-- [ ] On response: populate code viewer tabs from `files[]`
-- [ ] `frontend/src/components/output/DownloadButton.tsx` — triggers `/api/download/{token}`
-- [ ] Health indicator in header — polls `/health` every 30s, green/red dot
-- [ ] MCP Config panel — mode toggle (stdio / sse), conditional fields per mode
-- [ ] Session panel — radio memory / postgres, conditional DSN field
-- [ ] LiteLLM panel — all 5 env vars, masked API key input
+- [x] Wire Generate button → `POST /api/generate` via `frontend/src/api/scaffold.ts`
+- [x] On response: populate code viewer tabs from `files[]`
+- [x] `frontend/src/components/output/DownloadButton.tsx` — triggers `/api/download/{token}`
+- [x] Health indicator in header — polls `/health` every 30s, green/red dot
+- [x] MCP Config panel — mode toggle (stdio / sse), conditional fields per mode
+- [x] Session panel — radio memory / postgres, conditional DSN field
+- [x] LiteLLM panel — all 5 env vars, masked API key input
 
 ### Validation — AUTOMATED
 ```bash
@@ -339,22 +343,22 @@ cd frontend && npm run build && echo "PASS: build clean"
 ```
 
 ### Validation — MANUAL (all 10 must pass)
-- [ ] Health indicator green when backend running
-- [ ] Health indicator red when backend stopped
-- [ ] Generate button shows loading state on click
-- [ ] Code viewer populates with 11 tabs after generation
-- [ ] Each tab shows syntax-highlighted code
-- [ ] Copy button on each tab works
-- [ ] Download ZIP triggers browser download
-- [ ] Unzip — all 11 files present
-- [ ] Edit agent name → JSON preview updates immediately
-- [ ] Add MCP server (SSE mode) → JSON preview reflects it
+- [x] Health indicator green when backend running
+- [x] Health indicator red when backend stopped
+- [x] Generate button shows loading state on click
+- [x] Code viewer populates with 11 tabs after generation
+- [x] Each tab shows syntax-highlighted code
+- [x] Copy button on each tab works
+- [x] Download ZIP triggers browser download
+- [x] Unzip — all 11 files present
+- [x] Edit agent name → JSON preview updates immediately
+- [x] Add MCP server (SSE mode) → JSON preview reflects it
 
 ### STOP GATE 8
 ```
 ✅ CHECKPOINT 8 COMPLETE — MVP DONE
-Manual checklist: X/10 passed
-Known issues: [list any]
+Manual checklist: 10/10 passed
+Known issues: Vite chunk-size warning from react-syntax-highlighter bundle
 Build: CLEAN
 Awaiting: PROCEED (P1) or DONE
 ```

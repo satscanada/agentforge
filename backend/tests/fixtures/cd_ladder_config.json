@@ -1,0 +1,95 @@
+{
+  "project_name": "agentforge-cd-ladder",
+  "description": "Default CD Ladder Advisor scaffold for the AgentForge studio.",
+  "root_agent": {
+    "name": "CDLadderOrchestrator",
+    "agent_type": "sequential",
+    "instructions": "Coordinate the CD ladder workflow from profile lookup through final recommendation.",
+    "sub_agents": [
+      {
+        "name": "CustomerProfileAgent",
+        "agent_type": "llm",
+        "instructions": "Collect customer profile and account balance context.",
+        "model": "gemini/gemini-2.0-flash",
+        "tools": [
+          {
+            "name": "get_customer_profile",
+            "description": "Fetch the customer's profile."
+          },
+          {
+            "name": "get_account_balances",
+            "description": "Fetch the customer's account balances."
+          }
+        ]
+      },
+      {
+        "name": "RateResearchAgent",
+        "agent_type": "llm",
+        "instructions": "Research current CD rates across supported terms.",
+        "model": "gemini/gemini-2.0-flash",
+        "tools": [
+          {
+            "name": "get_current_cd_rates",
+            "description": "Retrieve available CD rates."
+          }
+        ]
+      },
+      {
+        "name": "LadderCalculatorAgent",
+        "agent_type": "llm",
+        "instructions": "Calculate an appropriate CD ladder split.",
+        "model": "gemini/gemini-2.0-flash",
+        "tools": [
+          {
+            "name": "calculate_ladder_splits",
+            "description": "Compute ladder allocations across terms.",
+            "is_deterministic": true
+          }
+        ]
+      },
+      {
+        "name": "ValidationAgent",
+        "agent_type": "llm",
+        "instructions": "Validate the recommendation and regulatory boundaries.",
+        "model": "gemini/gemini-2.0-flash",
+        "tools": [
+          {
+            "name": "validate_recommendation",
+            "description": "Validate the recommendation content."
+          },
+          {
+            "name": "check_regulatory_limits",
+            "description": "Check the recommendation against policy limits.",
+            "is_deterministic": true
+          }
+        ]
+      },
+      {
+        "name": "NotificationAgent",
+        "agent_type": "llm",
+        "instructions": "Format the final ladder recommendation for delivery.",
+        "model": "gemini/gemini-2.0-flash",
+        "tools": [
+          {
+            "name": "format_recommendation_output",
+            "description": "Format the final recommendation."
+          }
+        ]
+      }
+    ]
+  },
+  "mcp_servers": [
+    {
+      "name": "banking-core",
+      "mode": "stdio",
+      "command": "python",
+      "args": [
+        "-m",
+        "banking_core_mcp"
+      ],
+      "env": {
+        "BANK_ENV": "sandbox"
+      }
+    }
+  ]
+}

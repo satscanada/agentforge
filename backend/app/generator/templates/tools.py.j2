@@ -1,0 +1,17 @@
+"""Generated tool stubs for {{ config.project_name }}."""
+
+from __future__ import annotations
+
+
+{% for agent in flatten_agents(root_agent) %}
+{% for tool in agent.tools %}
+{% if tool.is_deterministic %}
+# DETERMINISTIC
+{% endif %}
+def {{ tool.name }}() -> str:
+    """{{ tool.description }}"""
+    return "{{ tool.name }} executed"
+
+
+{% endfor %}
+{% endfor %}
