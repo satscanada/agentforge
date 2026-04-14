@@ -118,7 +118,7 @@
   width: min(1480px, 100%);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(340px, 1.05fr) minmax(300px, 0.9fr) minmax(360px, 1.05fr);
+  grid-template-columns: minmax(380px, 0.95fr) minmax(520px, 1.35fr);
   gap: 1.25rem;
 }
 
@@ -129,6 +129,13 @@
 
 .panel-heading {
   margin-bottom: 1rem;
+}
+
+.panel-heading-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
 }
 
 .panel-heading h2 {
@@ -153,7 +160,6 @@
 }
 
 .topology-panel,
-.json-panel,
 .output-panel {
   overflow: hidden;
 }
@@ -242,6 +248,32 @@
   padding: 1rem;
   font-size: 0.85rem;
   line-height: 1.5;
+}
+
+.preview-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(8px);
+}
+
+.preview-modal {
+  width: min(980px, 100%);
+  max-height: 85vh;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.09);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.2);
+  padding: 1.25rem;
+}
+
+.modal-json-preview {
+  height: calc(85vh - 7rem);
 }
 
 .code-viewer {

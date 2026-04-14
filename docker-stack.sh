@@ -14,6 +14,24 @@ else
   exit 1
 fi
 
+print_urls() {
+  local backend_running frontend_running
+
+  backend_running="$("${COMPOSE_CMD[@]}" ps -q backend 2>/dev/null || true)"
+  frontend_running="$("${COMPOSE_CMD[@]}" ps -q frontend 2>/dev/null || true)"
+
+  if [[ -n "$backend_running" || -n "$frontend_running" ]]; then
+    cat <<'EOF'
+
+URLs:
+  Frontend: http://127.0.0.1:5173
+  Backend:  http://127.0.0.1:8000
+  Health:   http://127.0.0.1:8000/health
+  Docs:     http://127.0.0.1:8000/docs
+EOF
+  fi
+}
+
 usage() {
   cat <<'EOF'
 Usage: ./docker-stack.sh <command> [service]
@@ -39,12 +57,14 @@ service="${2:-}"
 case "$command" in
   start)
     "${COMPOSE_CMD[@]}" up -d
+    print_urls
     ;;
   stop)
     "${COMPOSE_CMD[@]}" down
     ;;
   status)
     "${COMPOSE_CMD[@]}" ps
+    print_urls
     ;;
   logs)
     if [[ -n "$service" ]]; then
@@ -58,6 +78,7 @@ case "$command" in
     ;;
   deploy)
     "${COMPOSE_CMD[@]}" up -d --build --remove-orphans
+    print_urls
     ;;
   ""|-h|--help|help)
     usage

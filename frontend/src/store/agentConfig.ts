@@ -2,6 +2,10 @@ import { create } from 'zustand'
 
 import type { LiteLLMConfig, MCPMode, ScaffoldRequest, SessionBackend } from '@/types'
 
+function cloneConfig(config: ScaffoldRequest): ScaffoldRequest {
+  return JSON.parse(JSON.stringify(config)) as ScaffoldRequest
+}
+
 export const DEFAULT_CONFIG: ScaffoldRequest = {
   projectName: 'cd-ladder-advisor',
   description: 'Default CD Ladder Advisor scaffold for AgentForge.',
@@ -104,9 +108,42 @@ export const DEFAULT_CONFIG: ScaffoldRequest = {
   },
 }
 
+export const EMPTY_CONFIG: ScaffoldRequest = {
+  projectName: 'new-agent-project',
+  description: 'New agent scaffold.',
+  rootAgent: {
+    name: 'RootAgent',
+    agentType: 'sequential',
+    instructions: 'Describe the orchestration goal for this project.',
+    subAgents: [],
+    tools: [],
+  },
+  mcpServers: [],
+  litellm: {
+    apiBase: 'http://127.0.0.1:4000/v1',
+    apiKeyEnv: 'LITELLM_API_KEY',
+    model: 'gemini/gemini-2.0-flash',
+    provider: 'openai',
+    maxTokens: 1024,
+    temperature: 0.2,
+  },
+  session: {
+    backend: 'memory',
+    sessionTtlMinutes: 60,
+  },
+  callbacks: {
+    beforeToolCall: true,
+    afterToolCall: true,
+    beforeAgentCall: true,
+    afterAgentCall: false,
+  },
+}
+
 interface AgentConfigState {
   config: ScaffoldRequest
   setConfig: (config: ScaffoldRequest) => void
+  resetConfig: () => void
+  loadBootstrapExample: () => void
   setProjectName: (projectName: string) => void
   setRootAgentName: (name: string) => void
   addMcpServer: () => void
@@ -124,8 +161,10 @@ interface AgentConfigState {
 }
 
 export const useAgentConfigStore = create<AgentConfigState>((set) => ({
-  config: DEFAULT_CONFIG,
+  config: cloneConfig(DEFAULT_CONFIG),
   setConfig: (config) => set({ config }),
+  resetConfig: () => set({ config: cloneConfig(EMPTY_CONFIG) }),
+  loadBootstrapExample: () => set({ config: cloneConfig(DEFAULT_CONFIG) }),
   setProjectName: (projectName) =>
     set((state) => ({ config: { ...state.config, projectName } })),
   setRootAgentName: (name) =>

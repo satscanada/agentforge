@@ -36,6 +36,10 @@ const HEALTH_POLL_INTERVAL_MS = 30_000
 
 function App() {
   const config = useAgentConfigStore((state) => state.config)
+  const resetConfig = useAgentConfigStore((state) => state.resetConfig)
+  const loadBootstrapExample = useAgentConfigStore(
+    (state) => state.loadBootstrapExample
+  )
   const setProjectName = useAgentConfigStore((state) => state.setProjectName)
   const setRootAgentName = useAgentConfigStore((state) => state.setRootAgentName)
   const addMcpServer = useAgentConfigStore((state) => state.addMcpServer)
@@ -53,6 +57,7 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [isHealthy, setIsHealthy] = useState(false)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
   const livePreview = useMemo(
     () => createPreviewFiles(deferredConfig),
@@ -106,6 +111,16 @@ function App() {
     }
   }
 
+  const handleReset = () => {
+    resetConfig()
+    setDownloadToken(null)
+  }
+
+  const handleLoadBootstrap = () => {
+    loadBootstrapExample()
+    setDownloadToken(null)
+  }
+
   return (
     <TooltipProvider>
       <div className="app-shell">
@@ -128,6 +143,12 @@ function App() {
                 onChange={(event) => setProjectName(event.target.value)}
               />
             </label>
+            <Button onClick={handleReset} type="button" variant="outline">
+              Reset Project
+            </Button>
+            <Button onClick={handleLoadBootstrap} type="button" variant="outline">
+              Load CD Ladder
+            </Button>
             <Button onClick={() => void handleGenerate()} type="button">
               {isGenerating ? 'Generating...' : 'Generate'}
             </Button>
@@ -137,9 +158,18 @@ function App() {
 
         <main className="workspace-grid">
           <section className="workspace-panel topology-panel">
-            <div className="panel-heading">
-              <p className="eyebrow">Topology</p>
-              <h2>CD Ladder Agent Tree</h2>
+            <div className="panel-heading panel-heading-row">
+              <div>
+                <p className="eyebrow">Topology</p>
+                <h2>CD Ladder Agent Tree</h2>
+              </div>
+              <Button
+                onClick={() => setIsPreviewOpen(true)}
+                type="button"
+                variant="outline"
+              >
+                Preview JSON
+              </Button>
             </div>
             <label className="panel-field">
               <span>Root Agent Name</span>
@@ -150,16 +180,6 @@ function App() {
               />
             </label>
             <AgentCard agent={deferredConfig.rootAgent} />
-          </section>
-
-          <section className="workspace-panel json-panel">
-            <div className="panel-heading">
-              <p className="eyebrow">State Preview</p>
-              <h2>Live Zustand JSON</h2>
-            </div>
-            <pre className="json-preview">
-              <code>{JSON.stringify(deferredConfig, null, 2)}</code>
-            </pre>
           </section>
 
           <section className="workspace-panel output-panel">
@@ -287,6 +307,39 @@ function App() {
             </TabsContent>
           </Tabs>
         </section>
+
+        {isPreviewOpen ? (
+          <div
+            className="preview-modal-backdrop"
+            onClick={() => setIsPreviewOpen(false)}
+            role="presentation"
+          >
+            <section
+              aria-label="State Preview"
+              aria-modal="true"
+              className="preview-modal"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+            >
+              <div className="panel-heading panel-heading-row">
+                <div>
+                  <p className="eyebrow">State Preview</p>
+                  <h2>Live Zustand JSON</h2>
+                </div>
+                <Button
+                  onClick={() => setIsPreviewOpen(false)}
+                  type="button"
+                  variant="outline"
+                >
+                  Close
+                </Button>
+              </div>
+              <pre className="json-preview modal-json-preview">
+                <code>{JSON.stringify(deferredConfig, null, 2)}</code>
+              </pre>
+            </section>
+          </div>
+        ) : null}
       </div>
     </TooltipProvider>
   )
