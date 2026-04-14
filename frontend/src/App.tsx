@@ -3,9 +3,9 @@ import {
   useDeferredValue,
   useEffect,
   useEffectEvent,
-  useMemo,
   useState,
 } from 'react'
+import type { CSSProperties } from 'react'
 import { Eye, LockKeyhole, LockKeyholeOpen } from 'lucide-react'
 
 import './App.css'
@@ -29,8 +29,14 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useAgentConfigStore } from '@/store/agentConfig'
-import { checkHealth, downloadZip, generateProject } from '@/api/scaffold'
-import type { GeneratedFile, MCPServerConfig, MCPMode, ScaffoldRequest } from '@/types'
+import { checkHealth, downloadZip, generateProject, runLiveTest } from '@/api/scaffold'
+import type {
+  GeneratedFile,
+  MCPServerConfig,
+  MCPMode,
+  ScaffoldRequest,
+  TestRunResponse,
+} from '@/types'
 
 const HEALTH_POLL_INTERVAL_MS = 30_000
 
@@ -57,11 +63,12 @@ function App() {
   const [isHealthy, setIsHealthy] = useState(false)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [isTopologyLocked, setIsTopologyLocked] = useState(true)
-
-  const livePreview = useMemo(
-    () => createPreviewFiles(deferredConfig),
-    [deferredConfig]
+  const [testPrompt, setTestPrompt] = useState(
+    'Create a quick test run for this topology and explain which agent handles what.'
   )
+  const [isRunningTest, setIsRunningTest] = useState(false)
+  const [testRun, setTestRun] = useState<TestRunResponse | null>(null)
+  const [testError, setTestError] = useState<string | null>(null)
 
   const pollHealth = useEffectEvent(async () => {
     try {
@@ -85,9 +92,9 @@ function App() {
       return
     }
     startTransition(() => {
-      setGeneratedFiles(livePreview)
+      setGeneratedFiles(createPreviewFiles(deferredConfig))
     })
-  }, [downloadToken, livePreview])
+  }, [deferredConfig, downloadToken])
 
   const handleGenerate = async () => {
     setIsGenerating(true)
@@ -99,6 +106,23 @@ function App() {
       })
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  const handleRunLiveTest = async () => {
+    setIsRunningTest(true)
+    setTestError(null)
+    try {
+      const response = await runLiveTest(config, testPrompt)
+      startTransition(() => {
+        setTestRun(response)
+      })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Live test runner failed to execute.'
+      setTestError(message)
+    } finally {
+      setIsRunningTest(false)
     }
   }
 
@@ -221,6 +245,7 @@ function App() {
               <TabsTrigger value="session">Session</TabsTrigger>
               <TabsTrigger value="env">Env Config</TabsTrigger>
               <TabsTrigger value="litellm">LiteLLM</TabsTrigger>
+              <TabsTrigger value="test">Live Test</TabsTrigger>
             </TabsList>
             <TabsContent value="mcp" className="bottom-tab-content">
               <div className="config-toolbar">
@@ -326,6 +351,94 @@ function App() {
                   onChange={() => {}}
                   type="password"
                 />
+              </div>
+            </TabsContent>
+            <TabsContent value="test" className="bottom-tab-content">
+              <div className="test-runner-shell">
+                <article className="test-runner-card">
+                  <div className="panel-heading">
+                    <p className="eyebrow">Runner Input</p>
+                    <h2>Live Agent Test Runner</h2>
+                  </div>
+                  <label className="panel-field">
+                    <span>Test Prompt</span>
+                    <textarea
+                      className="test-runner-input"
+                      onChange={(event) => setTestPrompt(event.target.value)}
+                      placeholder="Describe the scenario you want to simulate."
+                      value={testPrompt}
+                    />
+                  </label>
+                  <div className="test-runner-toolbar">
+                    <Button onClick={() => void handleRunLiveTest()} type="button">
+                      {isRunningTest ? 'Running Test...' : 'Run Live Test'}
+                    </Button>
+                    <p>
+                      Runs a backend simulation against the current topology, tools, session, and
+                      MCP setup.
+                    </p>
+                  </div>
+                  {testError ? <p className="test-runner-error">{testError}</p> : null}
+                </article>
+
+                <article className="test-runner-card">
+                  <div className="panel-heading">
+                    <p className="eyebrow">Runner Output</p>
+                    <h2>Execution Trace</h2>
+                  </div>
+                  {testRun ? (
+                    <div className="test-runner-results">
+                      <div className="test-runner-summary">
+                        <p className="section-label">Final Output</p>
+                        <pre className="test-runner-final-output">
+                          <code>{testRun.finalOutput}</code>
+                        </pre>
+                      </div>
+                      {testRun.warnings.length > 0 ? (
+                        <div className="test-runner-warnings">
+                          <p className="section-label">Warnings</p>
+                          {testRun.warnings.map((warning) => (
+                            <p key={warning} className="test-runner-warning">
+                              {warning}
+                            </p>
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className="test-runner-trace">
+                        {testRun.steps.map((step, index) => (
+                          <article
+                            key={`${step.agentName}-${index}`}
+                            className="test-run-step"
+                            style={{ '--depth': step.depth } as CSSProperties}
+                          >
+                            <div className="test-run-step-header">
+                              <div>
+                                <p className="agent-kicker">
+                                  {step.mode} · {step.agentType}
+                                </p>
+                                <h3>{step.agentName}</h3>
+                              </div>
+                              <span className="test-run-step-index">Step {index + 1}</span>
+                            </div>
+                            <p>{step.summary}</p>
+                            {step.toolsUsed.length > 0 ? (
+                              <p className="test-run-tools">
+                                Tools: {step.toolsUsed.join(', ')}
+                              </p>
+                            ) : null}
+                            <pre className="test-run-step-output">
+                              <code>{step.output}</code>
+                            </pre>
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="test-runner-empty">
+                      <p>Run a prompt to inspect how the current topology behaves.</p>
+                    </div>
+                  )}
+                </article>
               </div>
             </TabsContent>
           </Tabs>

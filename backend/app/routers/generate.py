@@ -6,7 +6,13 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 
 from app.generator.engine import GeneratorEngine
-from app.models.agent_config import ScaffoldRequest, ScaffoldResponse
+from app.models.agent_config import (
+    ScaffoldRequest,
+    ScaffoldResponse,
+    TestRunRequest,
+    TestRunResponse,
+)
+from app.services.test_runner import LiveTestRunner
 from app.utils.zip_builder import ZipArtifactStore
 
 
@@ -30,3 +36,9 @@ def download_scaffold(token: str) -> Response:
         raise HTTPException(status_code=404, detail="download token not found")
     headers = {"Content-Disposition": f'attachment; filename="agentforge-{token}.zip"'}
     return Response(content=content, media_type="application/zip", headers=headers)
+
+
+@router.post("/test-run", response_model=TestRunResponse)
+def run_live_test(request: TestRunRequest) -> TestRunResponse:
+    """Execute a simulated live run against the current topology."""
+    return LiveTestRunner(request.config).run(request.message)

@@ -376,7 +376,7 @@ Awaiting: PROCEED (P1) or DONE
 ## V2 — Future (do not implement during MVP sessions)
 
 - [ ] Drag-and-drop canvas (React Flow)
-- [ ] Live agent test runner
+- [x] Live agent test runner
 - [ ] GitHub push integration
 - [ ] Eval harness generation
 - [ ] Java / Spring Boot template set

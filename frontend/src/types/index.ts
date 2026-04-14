@@ -77,3 +77,23 @@ export interface HealthResponse {
   service: string
   version: string
 }
+
+export interface TestRunStep {
+  agentName: string
+  agentType: AgentType
+  depth: number
+  mode: string
+  summary: string
+  toolsUsed: string[]
+  output: string
+}
+
+export interface TestRunResponse {
+  status: string
+  projectName: string
+  rootAgent: string
+  inputMessage: string
+  finalOutput: string
+  steps: TestRunStep[]
+  warnings: string[]
+}

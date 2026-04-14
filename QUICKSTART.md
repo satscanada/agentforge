@@ -20,7 +20,7 @@ pyenv local 3.12.12
 
 cd backend
 python --version
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 cp .env.example .env
 python -m uvicorn app.main:app --reload --port 8000
 ```
@@ -157,6 +157,14 @@ To download the ZIP from the response token:
 ```bash
 curl -s -o /tmp/agentforge_output.zip \
   http://localhost:8000/api/download/<download-token>
+```
+
+### Run the backend test suite
+
+```bash
+cd /Users/sathishkr/aigen/agentforge/backend
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_e2e.py -q
 ```
 
 ## Common Issues

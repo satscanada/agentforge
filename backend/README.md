@@ -19,6 +19,15 @@ pyenv local 3.12.12
 cd backend
 pyenv version
 python --version
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m uvicorn app.main:app --reload --port 8000
+```
+
+## Tests
+
+Run the backend tests with the dev requirements installed:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_e2e.py -q
 ```

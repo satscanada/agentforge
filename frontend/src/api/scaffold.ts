@@ -5,6 +5,7 @@ import type {
   HealthResponse,
   ScaffoldRequest,
   ScaffoldResponse,
+  TestRunResponse,
   ToolDefinition,
 } from '@/types'
 
@@ -75,6 +76,26 @@ const fromBackendResponse = (data: Record<string, unknown>): ScaffoldResponse =>
   downloadToken: (data.download_token as string | null) ?? null,
 })
 
+const fromBackendTestRun = (data: Record<string, unknown>): TestRunResponse => ({
+  status: (data.status as string) ?? 'ok',
+  projectName: (data.project_name as string) ?? '',
+  rootAgent: (data.root_agent as string) ?? '',
+  inputMessage: (data.input_message as string) ?? '',
+  finalOutput: (data.final_output as string) ?? '',
+  steps: (
+    (data.steps as Array<Record<string, unknown>> | undefined) ?? []
+  ).map((step) => ({
+    agentName: (step.agent_name as string) ?? '',
+    agentType: (step.agent_type as 'llm' | 'sequential' | 'parallel' | 'loop') ?? 'llm',
+    depth: (step.depth as number) ?? 0,
+    mode: (step.mode as string) ?? 'agent',
+    summary: (step.summary as string) ?? '',
+    toolsUsed: ((step.tools_used as string[] | undefined) ?? []).filter(Boolean),
+    output: (step.output as string) ?? '',
+  })),
+  warnings: ((data.warnings as string[] | undefined) ?? []).filter(Boolean),
+})
+
 export const generateProject = async (
   config: ScaffoldRequest
 ): Promise<ScaffoldResponse> => {
@@ -83,6 +104,17 @@ export const generateProject = async (
     toBackendPayload(config)
   )
   return fromBackendResponse(response.data)
+}
+
+export const runLiveTest = async (
+  config: ScaffoldRequest,
+  message: string
+): Promise<TestRunResponse> => {
+  const response = await apiClient.post<Record<string, unknown>>('/api/test-run', {
+    config: toBackendPayload(config),
+    message,
+  })
+  return fromBackendTestRun(response.data)
 }
 
 export const downloadZip = (token: string): void => {

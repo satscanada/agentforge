@@ -573,3 +573,50 @@ class TestE2EHealth:
         data = resp.json()
         assert data["status"] == "ok"
         assert data["service"] == "agentforge"
+
+
+# ---------------------------------------------------------------------------
+# E2E: Live runner endpoint
+# ---------------------------------------------------------------------------
+
+class TestE2ELiveRunner:
+    """Live test runner returns a simulated execution trace."""
+
+    def test_sequential_live_test_returns_trace(self) -> None:
+        """Sequential topology returns child steps plus orchestrator summary."""
+        resp = client.post(
+            "/api/test-run",
+            json={
+                "config": SEQUENTIAL_PAYLOAD,
+                "message": "Summarize the pipeline steps for this customer batch.",
+            },
+        )
+
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["status"] == "ok"
+        assert data["project_name"] == "data-pipeline"
+        assert data["root_agent"] == "DataPipelineOrchestrator"
+        assert data["input_message"] == "Summarize the pipeline steps for this customer batch."
+        assert len(data["steps"]) == 4
+        assert data["steps"][0]["agent_name"] == "DataIngestionAgent"
+        assert data["steps"][0]["depth"] == 1
+        assert data["steps"][-1]["agent_name"] == "DataPipelineOrchestrator"
+        assert data["steps"][-1]["mode"] == "orchestrator"
+        assert "DataTransformAgent" in data["final_output"]
+        assert data["warnings"] == []
+
+    def test_live_test_surfaces_missing_mcp_warning(self) -> None:
+        """Configurations without MCP servers return a warning in the result."""
+        resp = client.post(
+            "/api/test-run",
+            json={
+                "config": SIMPLE_LLM_PAYLOAD,
+                "message": "Run a quick smoke test.",
+            },
+        )
+
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["steps"][0]["agent_name"] == "ChatbotAgent"
+        assert "No MCP servers are configured for this run." in data["warnings"]

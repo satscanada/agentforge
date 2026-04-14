@@ -151,3 +151,34 @@ class ScaffoldResponse(BaseModel):
 
     files: list[GeneratedFile] = Field(default_factory=list)
     download_token: str | None = None
+
+
+class TestRunRequest(BaseModel):
+    """Request payload for executing a live topology test."""
+
+    config: ScaffoldRequest
+    message: str = Field(min_length=1)
+
+
+class TestRunStep(BaseModel):
+    """Single simulated step in the live topology run."""
+
+    agent_name: str
+    agent_type: AgentType
+    depth: int = 0
+    mode: str
+    summary: str
+    tools_used: list[str] = Field(default_factory=list)
+    output: str
+
+
+class TestRunResponse(BaseModel):
+    """Response payload for the simulated live run."""
+
+    status: str = "ok"
+    project_name: str
+    root_agent: str
+    input_message: str
+    final_output: str
+    steps: list[TestRunStep] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
