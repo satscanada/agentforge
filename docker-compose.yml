@@ -1,22 +1,39 @@
-version: "3.9"
-
 services:
   backend:
-    image: python:3.11-slim
-    working_dir: /app/backend
-    volumes:
-      - .:/app
-    command: >
-      sh -c "echo 'Checkpoint 1 stub: backend service not wired yet.' && sleep infinity"
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: agentforge-backend
+    env_file:
+      - ./backend/.env.example
     ports:
       - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   frontend:
-    image: node:20-alpine
-    working_dir: /app/frontend
-    volumes:
-      - .:/app
-    command: >
-      sh -c "echo 'Checkpoint 1 stub: frontend service not wired yet.' && sleep infinity"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: agentforge-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
     ports:
-      - "5173:5173"
+      - "5173:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
