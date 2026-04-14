@@ -1,9 +1,36 @@
 import { create } from 'zustand'
 
-import type { LiteLLMConfig, MCPMode, ScaffoldRequest, SessionBackend } from '@/types'
+import type {
+  AgentDefinition,
+  AgentType,
+  LiteLLMConfig,
+  MCPMode,
+  ScaffoldRequest,
+  SessionBackend,
+} from '@/types'
 
 function cloneConfig(config: ScaffoldRequest): ScaffoldRequest {
   return JSON.parse(JSON.stringify(config)) as ScaffoldRequest
+}
+
+function updateAgentAtPath(
+  agent: AgentDefinition,
+  path: number[],
+  updater: (current: AgentDefinition) => AgentDefinition
+): AgentDefinition {
+  if (path.length === 0) {
+    return updater(agent)
+  }
+
+  const [nextIndex, ...rest] = path
+  const subAgents = agent.subAgents ?? []
+
+  return {
+    ...agent,
+    subAgents: subAgents.map((subAgent, index) =>
+      index === nextIndex ? updateAgentAtPath(subAgent, rest, updater) : subAgent
+    ),
+  }
 }
 
 export const DEFAULT_CONFIG: ScaffoldRequest = {
@@ -146,6 +173,13 @@ interface AgentConfigState {
   loadBootstrapExample: () => void
   setProjectName: (projectName: string) => void
   setRootAgentName: (name: string) => void
+  updateAgentField: <K extends keyof AgentDefinition>(
+    path: number[],
+    field: K,
+    value: AgentDefinition[K]
+  ) => void
+  setAgentType: (path: number[], agentType: AgentType) => void
+  addSubAgent: (path: number[]) => void
   addMcpServer: () => void
   updateMcpServer: (
     index: number,
@@ -175,6 +209,45 @@ export const useAgentConfigStore = create<AgentConfigState>((set) => ({
           ...state.config.rootAgent,
           name,
         },
+      },
+    })),
+  updateAgentField: (path, field, value) =>
+    set((state) => ({
+      config: {
+        ...state.config,
+        rootAgent: updateAgentAtPath(state.config.rootAgent, path, (agent) => ({
+          ...agent,
+          [field]: value,
+        })),
+      },
+    })),
+  setAgentType: (path, agentType) =>
+    set((state) => ({
+      config: {
+        ...state.config,
+        rootAgent: updateAgentAtPath(state.config.rootAgent, path, (agent) => ({
+          ...agent,
+          agentType,
+        })),
+      },
+    })),
+  addSubAgent: (path) =>
+    set((state) => ({
+      config: {
+        ...state.config,
+        rootAgent: updateAgentAtPath(state.config.rootAgent, path, (agent) => ({
+          ...agent,
+          subAgents: [
+            ...(agent.subAgents ?? []),
+            {
+              name: `NewAgent${(agent.subAgents ?? []).length + 1}`,
+              agentType: 'llm' as AgentType,
+              instructions: '',
+              tools: [],
+              subAgents: [],
+            },
+          ],
+        })),
       },
     })),
   addMcpServer: () =>

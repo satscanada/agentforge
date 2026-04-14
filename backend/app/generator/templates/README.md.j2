@@ -2,25 +2,57 @@
 
 {{ config.description }}
 
+## Overview
+
+This project scaffolds a [Google ADK](https://google.github.io/adk-docs/) agent and exposes
+it as a production-ready HTTP API via FastAPI. The agent is accessible through three endpoints:
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/health` | GET | Liveness check — always returns `{"status": "ok"}` |
+| `/run` | POST | Send a prompt and receive the full agent response |
+| `/stream` | POST | Send a prompt and receive a streaming (SSE) response |
+
+Start the API server and interact with `{{ root_agent.name }}` over HTTP — no ADK SDK required
+on the client side.
+
 ## Generated Files
 
-- `agent.py`
-- `tools.py`
-- `callbacks.py`
-- `main.py`
-- `api_server.py`
-- `requirements.txt`
-- `.env.example`
-- `CLAUDE.md`
-- `README.md`
-- `LOAD_CONTEXT.md`
-- `TODO.md`
+| File | Purpose |
+|---|---|
+| `agent.py` | ADK agent wiring — topology, model, tools |
+| `tools.py` | Tool implementations (deterministic and LLM-facing) |
+| `callbacks.py` | Audit logging and guardrail hooks |
+| `main.py` | ADK `Runner` entry point for local execution |
+| `api_server.py` | **FastAPI server** — exposes `/health`, `/run`, `/stream` |
+| `requirements.txt` | Python dependencies |
+| `.env.example` | Environment variable template |
+| `CLAUDE.md` | Project context for AI assistants |
+| `README.md` | This file |
+| `LOAD_CONTEXT.md` | Session restore context |
+| `TODO.md` | Guided next steps |
 
 ## Quick Start
 
 ```bash
 pip install -r requirements.txt
 cp .env.example .env
+
+# Run the agent interactively via the ADK runner
 python main.py
+
+# OR expose the agent as an HTTP API
 python -m uvicorn api_server:app --reload --port 8000
+```
+
+Once the API server is running:
+
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# Invoke the agent
+curl -X POST http://localhost:8000/run \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello, {{ root_agent.name }}!"}'
 ```

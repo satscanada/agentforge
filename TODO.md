@@ -367,11 +367,11 @@ Awaiting: PROCEED (P1) or DONE
 
 ## P1 — Post-MVP (after STOP GATE 8)
 
-- [ ] P1-A: `ParallelAgent` and `LoopAgent` in `agent.py.j2`
-- [ ] P1-B: PostgreSQL session — `DatabaseSessionService` in generated `api_server.py`
-- [ ] P1-C: `TODO.md.j2` and `CLAUDE.md.j2` fully implemented
-- [ ] P1-D: `.github/instructions/` files fully implemented
-- [ ] P1-E: UI — "Add sub-agent" button in topology builder
+- [x] P1-A: `ParallelAgent` and `LoopAgent` in `agent.py.j2`
+- [x] P1-B: PostgreSQL session — `DatabaseSessionService` in generated `api_server.py`
+- [x] P1-C: `TODO.md.j2` and `CLAUDE.md.j2` fully implemented
+- [x] P1-D: `.github/instructions/` files fully implemented
+- [x] P1-E: UI — "Add sub-agent" button in topology builder
 
 ## V2 — Future (do not implement during MVP sessions)
 

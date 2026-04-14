@@ -11,11 +11,26 @@ const AGENT_TYPES: AgentType[] = ['llm', 'sequential', 'parallel', 'loop']
 
 interface AgentTypeSelectProps {
   value: AgentType
+  disabled?: boolean
+  onValueChange?: (value: AgentType) => void
 }
 
-export function AgentTypeSelect({ value }: AgentTypeSelectProps) {
+export function AgentTypeSelect({
+  value,
+  disabled = false,
+  onValueChange,
+}: AgentTypeSelectProps) {
   return (
-    <Select defaultValue={value} value={value} disabled>
+    <Select
+      defaultValue={value}
+      value={value}
+      disabled={disabled}
+      onValueChange={(nextValue) => {
+        if (nextValue !== null) {
+          onValueChange?.(nextValue)
+        }
+      }}
+    >
       <SelectTrigger className="agent-type-select" size="sm">
         <SelectValue />
       </SelectTrigger>

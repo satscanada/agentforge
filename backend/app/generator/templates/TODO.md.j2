@@ -1,9 +1,150 @@
 # TODO — {{ config.project_name }}
 
-## Next Steps
+> **Protocol:** Work one checkpoint at a time. After completing a checkpoint, update
+> this file, run validation, and halt. Resume with `PROCEED`.
+>
+> **Before starting any checkpoint:** Verify the previous checkpoint is fully complete —
+> all tasks marked `[x]` and no failing validation steps.
 
-- Review `tools.py` and replace stub implementations with real integrations.
-- Confirm deterministic tools remain direct Python calls in `agent.py`.
-- Extend `callbacks.py` with audit logging and guardrails.
-- Validate `/health`, `/run`, and `/stream` in `api_server.py`.
-- Add environment secrets to `.env` before deployment.
+---
+
+## CHECKPOINT 1 — Environment & Secrets
+**Goal:** `.env` configured, LiteLLM proxy reachable, app starts cleanly.
+
+### Tasks
+- [ ] Copy `.env.example` → `.env` and fill in all values
+- [ ] Confirm `LITELLM_API_BASE` points to a running LiteLLM proxy
+- [ ] Set `LITELLM_API_KEY`
+{% if config.session.backend.value == "postgres" %}
+- [ ] Set `DATABASE_URL` (postgres DSN)
+- [ ] Run `alembic upgrade head` or equivalent schema migration
+{% endif %}
+- [ ] `pip install -r requirements.txt`
+- [ ] `python main.py` — confirm no import errors
+
+### Validation
+```bash
+python main.py &
+curl -s http://localhost:8000/health | python3 -c "import sys,json; d=json.load(sys.stdin); assert d['status']=='ok'; print('PASS')"
+kill %1
+```
+
+### STOP GATE 1
+```
+✅ CHECKPOINT 1 COMPLETE
+/health: PASS
+LiteLLM reachable: VERIFIED
+Awaiting: PROCEED
+```
+
+---
+
+## CHECKPOINT 2 — Implement Tool Stubs
+**Goal:** Every tool in `tools.py` has a real integration replacing the placeholder.
+
+### Tasks
+{% for agent in flatten_agents(root_agent) %}
+{% for tool in agent.tools %}
+{% if tool.is_deterministic %}
+- [ ] `{{ tool.name }}` ({{ agent.name }}) — **DETERMINISTIC**: implement pure-Python logic, no I/O
+{% else %}
+- [ ] `{{ tool.name }}` ({{ agent.name }}) — replace stub with real integration
+{% endif %}
+{% endfor %}
+{% endfor %}
+
+### Rules
+- Deterministic tools (`# DETERMINISTIC`) must remain pure Python — no LLM calls, no network I/O
+- All tool implementations must include type annotations and a one-line docstring
+- Do **not** move deterministic tools into `tools=[...]` — they are called directly in `agent.py`
+
+### Validation
+```bash
+python3 -c "from tools import *; print('PASS: tools import clean')"
+```
+
+### STOP GATE 2
+```
+✅ CHECKPOINT 2 COMPLETE
+All tools implemented: VERIFIED
+Deterministic boundary preserved: VERIFIED
+Awaiting: PROCEED
+```
+
+---
+
+## CHECKPOINT 3 — Smoke-Test Agent Pipeline
+**Goal:** End-to-end run through `{{ root_agent.name }}` with a sample payload.
+
+### Tasks
+- [ ] Start API server: `uvicorn api_server:app --port 8000`
+- [ ] POST a sample payload to `/run`
+- [ ] Verify response structure matches expected output
+- [ ] Confirm deterministic tools executed directly (check logs / callbacks output)
+{% if config.callbacks.before_tool_call or config.callbacks.after_tool_call %}
+- [ ] Confirm audit log lines appear for each non-deterministic tool call
+{% endif %}
+
+### Sample Payload
+```json
+{"message": "Run {{ root_agent.name }} with test input"}
+```
+
+### Validation
+```bash
+curl -s -X POST http://localhost:8000/run \
+  -H "Content-Type: application/json" \
+  -d '{"message": "smoke test"}' | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+assert d.get('status') == 'accepted', f'unexpected: {d}'
+print('PASS: /run accepted')
+"
+```
+
+### STOP GATE 3
+```
+✅ CHECKPOINT 3 COMPLETE
+/run smoke test: PASS
+Audit logs present: VERIFIED
+Awaiting: PROCEED
+```
+
+---
+
+## CHECKPOINT 4 — Production Hardening
+**Goal:** App is deployable with proper config management and observability.
+
+### Tasks
+- [ ] Add structured logging (JSON) to `callbacks.py`
+- [ ] Set `CORS` origins to production domain in `api_server.py`
+{% if config.session.backend.value == "postgres" %}
+- [ ] Confirm `DatabaseSessionService` connects to production DB
+- [ ] Add DB connection health check to `/health`
+{% endif %}
+- [ ] Add auth middleware or API key header validation to `/run` and `/stream`
+- [ ] Build and test Docker image: `docker build -t {{ config.project_name }} .`
+
+### Validation
+```bash
+docker run --env-file .env -p 8000:8000 {{ config.project_name }} &
+curl -s http://localhost:8000/health | python3 -c "import sys,json; d=json.load(sys.stdin); assert d['status']=='ok'; print('PASS: Docker health')"
+```
+
+### STOP GATE 4
+```
+✅ CHECKPOINT 4 COMPLETE
+Docker build: PASS
+/health in container: PASS
+Auth enforced: VERIFIED
+Awaiting: PROCEED (or DONE)
+```
+
+---
+
+## Backlog
+
+- [ ] Add eval harness for regression testing agent outputs
+- [ ] Add streaming SSE client example for `/stream`
+- [ ] Extend topology with additional sub-agents as requirements evolve
+

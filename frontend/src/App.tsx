@@ -6,6 +6,7 @@ import {
   useMemo,
   useState,
 } from 'react'
+import { Eye, LockKeyhole, LockKeyholeOpen } from 'lucide-react'
 
 import './App.css'
 
@@ -21,16 +22,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { TooltipProvider } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { useAgentConfigStore } from '@/store/agentConfig'
 import { checkHealth, downloadZip, generateProject } from '@/api/scaffold'
-import type {
-  GeneratedFile,
-  HealthResponse,
-  MCPServerConfig,
-  MCPMode,
-  ScaffoldRequest,
-} from '@/types'
+import type { GeneratedFile, MCPServerConfig, MCPMode, ScaffoldRequest } from '@/types'
 
 const HEALTH_POLL_INTERVAL_MS = 30_000
 
@@ -41,7 +41,6 @@ function App() {
     (state) => state.loadBootstrapExample
   )
   const setProjectName = useAgentConfigStore((state) => state.setProjectName)
-  const setRootAgentName = useAgentConfigStore((state) => state.setRootAgentName)
   const addMcpServer = useAgentConfigStore((state) => state.addMcpServer)
   const updateMcpServer = useAgentConfigStore((state) => state.updateMcpServer)
   const setMcpServerMode = useAgentConfigStore((state) => state.setMcpServerMode)
@@ -55,9 +54,9 @@ function App() {
   )
   const [downloadToken, setDownloadToken] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [health, setHealth] = useState<HealthResponse | null>(null)
   const [isHealthy, setIsHealthy] = useState(false)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [isTopologyLocked, setIsTopologyLocked] = useState(true)
 
   const livePreview = useMemo(
     () => createPreviewFiles(deferredConfig),
@@ -67,10 +66,8 @@ function App() {
   const pollHealth = useEffectEvent(async () => {
     try {
       const nextHealth = await checkHealth()
-      setHealth(nextHealth)
       setIsHealthy(nextHealth.status === 'ok')
     } catch {
-      setHealth(null)
       setIsHealthy(false)
     }
   })
@@ -113,11 +110,13 @@ function App() {
 
   const handleReset = () => {
     resetConfig()
+    setIsTopologyLocked(true)
     setDownloadToken(null)
   }
 
   const handleLoadBootstrap = () => {
     loadBootstrapExample()
+    setIsTopologyLocked(true)
     setDownloadToken(null)
   }
 
@@ -130,29 +129,34 @@ function App() {
             <h1>Topology Builder</h1>
           </div>
           <div className="header-controls">
-            <div className="health-pill">
-              <span className={`health-dot ${isHealthy ? 'is-online' : 'is-offline'}`} />
-              <span>{isHealthy ? 'Backend Healthy' : 'Backend Offline'}</span>
-              <small>{health?.version ?? 'No response'}</small>
+            <div className="header-meta">
+              <div className="health-pill">
+                <span className="sr-only">
+                  {isHealthy ? 'Backend healthy' : 'Backend offline'}
+                </span>
+                <span className={`health-dot ${isHealthy ? 'is-online' : 'is-offline'}`} />
+              </div>
+              <label className="project-name-field">
+                <span>Project Name</span>
+                <input
+                  type="text"
+                  value={config.projectName}
+                  onChange={(event) => setProjectName(event.target.value)}
+                />
+              </label>
             </div>
-            <label className="project-name-field">
-              <span>Project Name</span>
-              <input
-                type="text"
-                value={config.projectName}
-                onChange={(event) => setProjectName(event.target.value)}
-              />
-            </label>
-            <Button onClick={handleReset} type="button" variant="outline">
-              Reset Project
-            </Button>
-            <Button onClick={handleLoadBootstrap} type="button" variant="outline">
-              Load CD Ladder
-            </Button>
-            <Button onClick={() => void handleGenerate()} type="button">
-              {isGenerating ? 'Generating...' : 'Generate'}
-            </Button>
-            <DownloadButton disabled={downloadToken === null} onClick={handleDownload} />
+            <div className="header-actions">
+              <Button onClick={handleReset} type="button" variant="outline">
+                Reset Project
+              </Button>
+              <Button onClick={handleLoadBootstrap} type="button" variant="outline">
+                Load CD Ladder
+              </Button>
+              <Button onClick={() => void handleGenerate()} type="button">
+                {isGenerating ? 'Generating...' : 'Generate'}
+              </Button>
+              <DownloadButton disabled={downloadToken === null} onClick={handleDownload} />
+            </div>
           </div>
         </header>
 
@@ -161,25 +165,44 @@ function App() {
             <div className="panel-heading panel-heading-row">
               <div>
                 <p className="eyebrow">Topology</p>
-                <h2>CD Ladder Agent Tree</h2>
+                <h2>{formatTopologyTitle(config.projectName)}</h2>
               </div>
-              <Button
-                onClick={() => setIsPreviewOpen(true)}
-                type="button"
-                variant="outline"
-              >
-                Preview JSON
-              </Button>
+              <div className="topology-actions">
+                <Button
+                  onClick={() => setIsPreviewOpen(true)}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <Eye size={14} />
+                  Preview JSON
+                </Button>
+                <Tooltip>
+                  <TooltipTrigger render={<span />}>
+                    <Button
+                      aria-label={
+                        isTopologyLocked
+                          ? 'Unlock topology editing'
+                          : 'Lock topology editing'
+                      }
+                      className="topology-lock-button"
+                      onClick={() => setIsTopologyLocked((current) => !current)}
+                      size="icon-sm"
+                      type="button"
+                      variant={isTopologyLocked ? 'outline' : 'default'}
+                    >
+                      {isTopologyLocked ? <LockKeyhole size={14} /> : <LockKeyholeOpen size={14} />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isTopologyLocked
+                      ? 'Topology is locked. Unlock to edit agent names, types, and instructions.'
+                      : 'Topology is unlocked. Lock it again to prevent accidental changes.'}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
-            <label className="panel-field">
-              <span>Root Agent Name</span>
-              <input
-                type="text"
-                value={config.rootAgent.name}
-                onChange={(event) => setRootAgentName(event.target.value)}
-              />
-            </label>
-            <AgentCard agent={deferredConfig.rootAgent} />
+            <AgentCard agent={deferredConfig.rootAgent} locked={isTopologyLocked} />
           </section>
 
           <section className="workspace-panel output-panel">
@@ -470,6 +493,14 @@ function createPreviewFiles(config: ScaffoldRequest): GeneratedFile[] {
       ].join('\n'),
     },
   ]
+}
+
+function formatTopologyTitle(projectName: string): string {
+  return projectName
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ') || 'Agent Topology'
 }
 
 export default App

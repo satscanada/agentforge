@@ -1,21 +1,149 @@
 # {{ config.project_name }} — Project Context
 
+> This file is auto-loaded by Claude in VS Code and GitHub Copilot.
+> Keep it up-to-date as the project evolves.
+
+---
+
 ## Project Identity
 
-- Name: `{{ config.project_name }}`
-- Description: {{ config.description }}
-- Root Agent: `{{ root_agent.name }}`
+**Name:** `{{ config.project_name }}`
+**Description:** {{ config.description }}
+**Root Agent:** `{{ root_agent.name }}` (`{{ root_agent.agent_type.value }}`)
+**Session Backend:** `{{ config.session.backend.value }}`
+**LiteLLM Model:** `{{ config.litellm.model }}`
 
-## Architectural Rules
+---
 
-1. LiteLLM is the only model gateway.
-2. Deterministic tools are direct Python calls.
-3. Audit logging belongs in callbacks only.
-4. `/health`, `/run`, and `/stream` must remain available.
-5. Session service is config-driven.
+## Non-Negotiable Architectural Rules
+
+1. **LiteLLM is the only model gateway.** Never use `google-generativeai`, `openai` SDK,
+   or any provider SDK directly. Always `from google.adk.models.lite_llm import LiteLlm`.
+
+2. **Deterministic tools are direct Python calls.** The following tools are marked
+   `is_deterministic=True` and **must** be called directly in `agent.py` — never wrapped
+   as `FunctionTool` or passed to the LLM:
+{% set has_deterministic = [] %}
+{% for agent in flatten_agents(root_agent) %}
+{% for tool in agent.tools if tool.is_deterministic %}
+{% set _ = has_deterministic.append(tool) %}
+   - `{{ tool.name }}` (owner: `{{ agent.name }}`)
+{% endfor %}
+{% endfor %}
+{% if not has_deterministic %}
+   *(no deterministic tools in this topology)*
+{% endif %}
+
+3. **Audit logging belongs in callbacks only.** Never log inside tool functions.
+   All logging via `before_tool_call` / `after_tool_call` in `callbacks.py`.
+
+4. **Every generated project exposes `/health`, `/run`, `/stream`** via `api_server.py`.
+   `/health` always returns HTTP 200 — never gated behind auth.
+
+5. **Session service is config-driven.**
+{% if config.session.backend.value == "postgres" %}
+   This project uses `DatabaseSessionService(db_url=DATABASE_URL)`.
+   Never hardcode the DSN — always read from `os.environ["DATABASE_URL"]`.
+{% else %}
+   This project uses `InMemorySessionService` (suitable for development/testing).
+   Switch to `DatabaseSessionService` for production persistence.
+{% endif %}
+
+---
 
 ## Agent Topology
 
-{% for agent in flatten_agents(root_agent) %}
-- `{{ agent.name }}`: `{{ agent.agent_type.value }}`
+```
+{{ root_agent.name }} ({{ root_agent.agent_type.value }})
+{% for agent in flatten_agents(root_agent) if agent.name != root_agent.name %}
+{% set depth = namespace(value=0) %}
+{% for parent in flatten_agents(root_agent) %}
+{% if agent in parent.sub_agents %}{% set depth.value = 1 %}{% endif %}
 {% endfor %}
+{{ "├── " if not loop.last else "└── " }}{{ agent.name }} ({{ agent.agent_type.value }})
+{% if agent.tools %}
+{% for tool in agent.tools %}
+    {{ "│   " if not loop.last else "    " }}{{ "🔒 " if tool.is_deterministic else "   " }}{{ tool.name }}{% if tool.is_deterministic %} [DETERMINISTIC]{% endif %}
+
+{% endfor %}
+{% endif %}
+{% endfor %}
+```
+
+### Full Agent Details
+
+{% for agent in flatten_agents(root_agent) %}
+#### `{{ agent.name }}` — `{{ agent.agent_type.value }}`
+- **Instructions:** {{ agent.instructions }}
+{% if agent.model %}
+- **Model:** `{{ agent.model }}`
+{% else %}
+- **Model:** inherits global `MODEL`
+{% endif %}
+{% if agent.tools %}
+- **Tools:**
+{% for tool in agent.tools %}
+  - `{{ tool.name }}` — {{ tool.description }}{% if tool.is_deterministic %} 🔒 **DETERMINISTIC** (direct call only){% endif %}
+
+{% endfor %}
+{% endif %}
+{% if agent.sub_agents %}
+- **Sub-agents:** {% for sub in agent.sub_agents %}`{{ sub.name }}`{% if not loop.last %}, {% endif %}{% endfor %}
+
+{% endif %}
+
+{% endfor %}
+---
+
+## MCP Servers
+{% if config.mcp_servers %}
+{% for mcp in config.mcp_servers %}
+- **{{ mcp.name }}** (`{{ mcp.mode.value }}`{% if not mcp.enabled %}, disabled{% endif %})
+{% if mcp.mode.value == "stdio" %}  — command: `{{ mcp.command }}{% if mcp.args %} {{ mcp.args | join(" ") }}{% endif %}`{% endif %}
+{% if mcp.mode.value == "sse" %}  — url: `{{ mcp.url }}`{% endif %}
+{% endfor %}
+{% else %}
+No MCP servers configured.
+{% endif %}
+
+---
+
+## LiteLLM Configuration
+
+```env
+LITELLM_API_BASE={{ config.litellm.api_base }}
+LITELLM_API_KEY=${LITELLM_API_KEY}
+LITELLM_MODEL={{ config.litellm.model }}
+LITELLM_PROVIDER={{ config.litellm.provider }}
+LITELLM_MAX_TOKENS={{ config.litellm.max_tokens }}
+```
+
+---
+
+## Service URLs
+
+| Service  | URL                            |
+|----------|--------------------------------|
+| API      | http://localhost:8000          |
+| Health   | http://localhost:8000/health   |
+| Run      | http://localhost:8000/run      |
+| Stream   | http://localhost:8000/stream   |
+| API Docs | http://localhost:8000/docs     |
+
+---
+
+## File Map
+
+| File              | Purpose                                          |
+|-------------------|--------------------------------------------------|
+| `agent.py`        | ADK agent instances + deterministic call site    |
+| `tools.py`        | Tool implementations (stubs → real integrations) |
+| `callbacks.py`    | Audit logging + guardrails                       |
+| `main.py`         | CLI entry point                                  |
+| `api_server.py`   | FastAPI: `/health`, `/run`, `/stream`            |
+| `requirements.txt`| Python dependencies                              |
+| `.env.example`    | Environment variable template                    |
+| `CLAUDE.md`       | This file — AI session context                   |
+| `LOAD_CONTEXT.md` | Compact topology reference                       |
+| `TODO.md`         | Checkpoint-driven dev plan                       |
+

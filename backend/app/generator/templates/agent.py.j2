@@ -3,7 +3,27 @@
 from __future__ import annotations
 
 from google.adk.models.lite_llm import LiteLlm
-
+{% set used_types = collect_agent_types(root_agent) %}
+{% if "llm" in used_types %}
+from google.adk.agents import LlmAgent
+{% endif %}
+{% if "sequential" in used_types %}
+from google.adk.agents import SequentialAgent
+{% endif %}
+{% if "parallel" in used_types %}
+from google.adk.agents import ParallelAgent
+{% endif %}
+{% if "loop" in used_types %}
+from google.adk.agents import LoopAgent
+{% endif %}
+{% set all_tools = collect_all_nondeterministic_tools(root_agent) %}
+{% if all_tools %}
+from tools import (
+{% for tool in all_tools %}
+    {{ tool }},
+{% endfor %}
+)
+{% endif %}
 
 MODEL = LiteLlm(
     model="{{ config.litellm.model }}",
@@ -29,6 +49,41 @@ class {{ agent.name }}Definition:
 
 
 {% endfor %}
+
+# ---------------------------------------------------------------------------
+# ADK agent instances — built bottom-up so orchestrators can reference
+# their sub-agents by variable name.
+# ---------------------------------------------------------------------------
+
+{% for agent in reverse_flatten_agents(root_agent) %}
+{% if agent.agent_type.value == "llm" %}
+{{ agent.name | to_var_name }} = LlmAgent(
+    name="{{ agent.name }}",
+    model=MODEL,
+    instruction="""{{ agent.instructions }}""",
+    tools=[{% for tool in nondeterministic_tools(agent) %}{{ tool }}{% if not loop.last %}, {% endif %}{% endfor %}],
+)
+{% elif agent.agent_type.value == "sequential" %}
+{{ agent.name | to_var_name }} = SequentialAgent(
+    name="{{ agent.name }}",
+    sub_agents=[{% for sub in agent.sub_agents %}{{ sub.name | to_var_name }}{% if not loop.last %}, {% endif %}{% endfor %}],
+)
+{% elif agent.agent_type.value == "parallel" %}
+{{ agent.name | to_var_name }} = ParallelAgent(
+    name="{{ agent.name }}",
+    sub_agents=[{% for sub in agent.sub_agents %}{{ sub.name | to_var_name }}{% if not loop.last %}, {% endif %}{% endfor %}],
+)
+{% elif agent.agent_type.value == "loop" %}
+{{ agent.name | to_var_name }} = LoopAgent(
+    name="{{ agent.name }}",
+    sub_agents=[{% for sub in agent.sub_agents %}{{ sub.name | to_var_name }}{% if not loop.last %}, {% endif %}{% endfor %}],
+)
+{% endif %}
+{% endfor %}
+
+root_agent = {{ root_agent.name | to_var_name }}
+
+
 def build_agent_topology() -> dict[str, object]:
     """Build the generated agent topology summary."""
     return {
@@ -39,7 +94,7 @@ def build_agent_topology() -> dict[str, object]:
 
 
 def run_deterministic_validations() -> list[str]:
-    """Execute deterministic CD ladder checks directly in Python."""
+    """Execute deterministic checks directly in Python."""
     executed_calls: list[str] = []
 {% for agent in flatten_agents(root_agent) %}
 {% for tool in deterministic_tools(agent) %}

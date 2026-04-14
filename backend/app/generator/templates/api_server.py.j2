@@ -2,8 +2,30 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+import os
 
+from fastapi import FastAPI
+from google.adk.runners import Runner
+{% if config.session.backend.value == "postgres" %}
+from google.adk.sessions import DatabaseSessionService
+{% else %}
+from google.adk.sessions import InMemorySessionService
+{% endif %}
+
+from agent import root_agent
+
+{% if config.session.backend.value == "postgres" %}
+_DB_URL = os.environ.get("DATABASE_URL", "{{ config.session.db_url }}")
+session_service = DatabaseSessionService(db_url=_DB_URL)
+{% else %}
+session_service = InMemorySessionService()
+{% endif %}
+
+runner = Runner(
+    agent=root_agent,
+    app_name="{{ config.project_name }}",
+    session_service=session_service,
+)
 
 app = FastAPI(title="{{ config.project_name }} API", version="1.0.0")
 
@@ -11,7 +33,12 @@ app = FastAPI(title="{{ config.project_name }} API", version="1.0.0")
 @app.get("/health", tags=["Health"])
 def health() -> dict[str, str]:
     """Return service health details."""
-    return {"status": "ok", "service": "{{ config.project_name }}", "version": "1.0.0"}
+    return {
+        "status": "ok",
+        "service": "{{ config.project_name }}",
+        "version": "1.0.0",
+        "session_backend": "{{ config.session.backend.value }}",
+    }
 
 
 @app.post("/run", tags=["Agent"])

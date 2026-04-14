@@ -115,8 +115,4 @@ Browser download
 | `.github/copilot-instructions.md` | Always-on rules for Copilot |
 | `.github/prompts/loadcontext.prompt.md` | `/loadcontext` slash command |
 
-## License
-
-Internal — Canadian retail bank AI engineering team.
-
 # agentforge

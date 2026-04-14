@@ -54,21 +54,37 @@
   gap: 1rem;
   flex-wrap: wrap;
   justify-content: end;
+  flex: 1;
+}
+
+.header-meta {
+  display: flex;
+  align-items: end;
+  gap: 1rem;
+  flex: 1 1 460px;
+  flex-wrap: wrap;
+  justify-content: end;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: end;
 }
 
 .health-pill {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.7rem 0.9rem;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(15, 23, 42, 0.08);
-  color: #334155;
-}
-
-.health-pill small {
-  color: #64748b;
 }
 
 .health-dot {
@@ -86,6 +102,18 @@
 .health-dot.is-offline {
   background: #dc2626;
   box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.12);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .project-name-field {
@@ -138,6 +166,14 @@
   align-items: start;
 }
 
+.topology-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  justify-content: end;
+}
+
 .panel-heading h2 {
   font-size: 1.2rem;
 }
@@ -157,6 +193,18 @@
   padding: 0 0.9rem;
   font-size: 0.95rem;
   color: #111827;
+}
+
+.panel-field textarea {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 0.75rem 0.9rem;
+  font-size: 0.95rem;
+  color: #111827;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 5.5rem;
 }
 
 .topology-panel,
@@ -183,11 +231,46 @@
   align-items: start;
 }
 
+.agent-card-title {
+  flex: 1;
+}
+
+.agent-name-input {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-family: 'Geist Variable', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.agent-name-input:focus-visible {
+  outline: none;
+}
+
+.agent-name-input:disabled {
+  color: #111827;
+  cursor: default;
+}
+
 .agent-kicker {
   margin: 0 0 0.2rem;
   color: #9a3412;
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+.agent-field {
+  margin-top: 0.9rem;
+  margin-bottom: 0;
+}
+
+.agent-instructions-input:disabled {
+  color: #475569;
+  cursor: default;
+  resize: none;
 }
 
 .agent-instructions,
@@ -208,6 +291,27 @@
   display: grid;
   gap: 0.75rem;
   margin-top: 0.75rem;
+}
+
+.add-sub-agent-btn {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px dashed rgba(99, 102, 241, 0.5);
+  border-radius: 8px;
+  background: transparent;
+  color: #6366f1;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.add-sub-agent-btn:hover {
+  background: rgba(99, 102, 241, 0.06);
+  border-color: #6366f1;
 }
 
 .tool-row {
@@ -339,6 +443,10 @@
   margin-bottom: 1rem;
 }
 
+.topology-lock-button {
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.04);
+}
+
 .config-toolbar p {
   margin: 0;
   color: #475569;
@@ -406,6 +514,11 @@
   .header-controls {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .header-meta,
+  .header-actions {
+    justify-content: stretch;
   }
 
   .health-pill {
